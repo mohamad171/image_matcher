@@ -56,7 +56,10 @@ def build_faiss_index(descriptors):
 def search_similar(image_path, index, ids,server_ids, threshold=1000):
     descriptors = extract_features(image_path)
     distances, indices = index.search(descriptors.astype('float32'), 1)  # Search for the closest match
-    if np.min(distances) < threshold:
+    print(f"Min:{np.min(distances)}")
+    if np.min(distances) == 0:
+        return None , None
+    if np.min(distances) <= threshold:
         matched_id = ids[indices[0][0]]
         server_id = server_ids[indices[0][0]]
         return matched_id, server_id  # Return the ID of the closest match
@@ -65,7 +68,7 @@ def search_similar(image_path, index, ids,server_ids, threshold=1000):
 
 def analyze_distances(image_path, index):
     descriptors = extract_features(image_path)
-    distances, _ = index.search(descriptors.astype('float32'), 5)  # Search for top 5 matches
+    distances, _ = index.search(descriptors.astype('float32'), 1)  # Search for top 5 matches
     return distances
 
 # Example usage
@@ -75,20 +78,22 @@ if __name__ == "__main__":
     image_path_2 = 'sample_images/2.jpg'
     image_path_3 = 'sample_images/3.jpg'
     image_path_4 = 'sample_images/4.jpg'
-    image_path_5 = 'sample_images/5.jpg'
+    image_path_5 = 'sample_images/moderndata.png'
 
 #     # Extract and store features for the first image
-#     descriptors = extract_features(image_path_1)
-#     store_features(descriptors,server_id=random.randint(0,10))
+    # i_id = random.randint(0,10)
+    # descriptors = extract_features(image_path_2)
+    # store_features(descriptors,server_id=i_id)
+    # print(i_id)
 
     # Load all descriptors from the database and build the FAISS index
     server_ids, ids, all_descriptors = load_descriptors()
     index = build_faiss_index(all_descriptors)
 
-    distances = analyze_distances(image_path_4, index)
-    threshold = np.mean(distances) + np.std(distances)
+    distances = analyze_distances(image_path_5, index)
+    threshold = np.mean(distances) - np.std(distances)
     print("Threshold set to:", threshold)
 
     # Search for similar images using the second image
-    result,server_id = search_similar(image_path_4, index, ids,server_ids,threshold=threshold)
+    result,server_id = search_similar(image_path_5, index, ids,server_ids,threshold=threshold)
     print("Matching record ID:", result,server_id)
